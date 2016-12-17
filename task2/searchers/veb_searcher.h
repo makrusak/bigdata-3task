@@ -5,31 +5,38 @@
 #include "searcher.h"
 #include <iostream>
 
-template<typename T>
+template<typename T, T MAX_VAL>
 class VebSearcher: public Searcher<T> {
  public:
   VebSearcher(const std::vector<T>& vec) {
     if (vec.size() == 0) {
       return;
     }
-    int height = tree_height(vec.size());
+    int from_size = (int)vec.size();
+    int height = tree_height(from_size);
+
     vec_.resize(1<<height);
-    for (int i=0; i<vec.size(); i++) {
+    for (int i=0; i<from_size; i++) {
       int pos = pos_from_sorted_pos(i+1, height);
       vec_[pos] = vec[i];
 //      std::cout << i+1 << " to " << pos << "\n";
     }
-/*
-    std::cout << "Resulted struct: " << "\n";
-    std::cout << height << "\n";
-    for (const T&c : vec_) {
-      std::cout << c << " ";
+    //Dirty trick: fill array with infs up to vec_ size
+    for (int i=0;i<(int)vec_.size()-1-vec.size();i++) {
+      int pos = pos_from_sorted_pos(from_size+i+1, height);
+      vec_[pos] = MAX_VAL;
     }
-    std::cout << "\n";
-    */
+    /*
+        std::cout << "Resulted struct: " << "\n";
+        std::cout << height << "\n";
+        for (const T&c : vec_) {
+          std::cout << c << " ";
+        }
+        std::cout << "\n";
+        */
   }
-
-  bool search_debug(const T& elem) {
+/*
+  bool search(const T& elem) {
     bool real_ans = false;
     for (const T& el: vec_) {
       real_ans |= (el == elem);
@@ -42,7 +49,8 @@ class VebSearcher: public Searcher<T> {
     if (real_ans != ans) {
       exit(0);
     }
-  }
+    return ans;
+  } */
 
   bool search(const T& elem) {
     if (vec_.size() == 0) {
@@ -54,11 +62,11 @@ class VebSearcher: public Searcher<T> {
  private:
   void hyper_compute(int n, int& d, int& D, int& subtree_size, int& subtree_leaf_count) {
     int h = tree_height(n);
-    d = h / 2;
-    D = (1<<d) - 1;
-    int delta = h - d;
-    subtree_size = (1<<delta) - 1;
-    subtree_leaf_count = 1<<(h/2);
+    int bottom_height = h / 2;
+    d = h - bottom_height;
+    D = tree_size(d);
+    subtree_size = tree_size(bottom_height);
+    subtree_leaf_count = 1<<bottom_height;
   }
 
   int veb_search(int current_pos, int length, const T& elt) {
@@ -66,17 +74,17 @@ class VebSearcher: public Searcher<T> {
     int d, D, subtree_size, subtree_leaf_count;
     hyper_compute(length, d, D, subtree_size, subtree_leaf_count);
 
-//    std::cout << "    top_h: " << d << " top_size: " << D << " subtree_size: " << subtree_size << " subtree_leaf_count: " << subtree_leaf_count << "\n";
+ //   std::cout << "    top_h: " << d << " top_size: " << D << " subtree_size: " << subtree_size << " subtree_leaf_count: " << subtree_leaf_count << "\n";
 
     if (length > 1) {
       // Recurse on top half of tree
-//      std::cout << "    TOP tree\n";
+ //     std::cout << "    TOP tree\n";
       int subtree_index = veb_search(current_pos, D, elt);
       if (subtree_index < 0) return subtree_index;
 
       int offset = subtree_index * subtree_size + D;
 
- //     std::cout << "    BOTTOM tree with offset(" << subtree_index << " " << subtree_size << " " << D << ") " << offset << "\n";
+  //    std::cout << "    BOTTOM tree with offset(" << subtree_index << " " << subtree_size << " " << D << ") " << offset << "\n";
       // If not in top half, use subtree index to find place in bottom half
       int bottom_subtree_index = veb_search(current_pos + offset, subtree_size, elt);
       if (bottom_subtree_index == -1) {

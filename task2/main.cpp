@@ -15,6 +15,7 @@
 #include "searchers/veb_searcher.h"
 
 typedef std::unique_ptr<Searcher<long long> > searcher_ptr;
+const long long MAX_VAL = (long long)(1e12);
 
 std::vector<long long> generate_rand_vector_sorted(int n, long long max_num) {
   std::vector<int> c;
@@ -47,8 +48,6 @@ bench_res benchmark(searcher_ptr searcher, std::vector<long long> queries) {
   bench_res br;
   br.answers = std::vector<char>(queries.size());
 
-  //struct timespec start, end;
-  //clock_gettime(CLOCK_REALTIME,&start);
   auto begin = std::chrono::high_resolution_clock::now();
 
   for (int i = 0; i < (int)queries.size(); i++) {
@@ -56,9 +55,6 @@ bench_res benchmark(searcher_ptr searcher, std::vector<long long> queries) {
   }
 
   auto end = std::chrono::high_resolution_clock::now();
-  //clock_gettime(CLOCK_REALTIME,&end);
-
-  //br.calc_time_ns = end.tv_nsec - start.tv_nsec;
   br.calc_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
   return br;
 }
@@ -74,22 +70,23 @@ std::vector<std::pair<std::string, bench_res> > results_all_algo(const std::vect
   results.push_back(std::make_pair("Sqrt Searcher", benchmark(\
                                    searcher_ptr(new SqrtSearcher<long long>(vec)), queries)));
   results.push_back(std::make_pair("VEB Searcher", benchmark(\
-                                   searcher_ptr(new VebSearcher<long long>(vec)), queries)));
+                                   searcher_ptr(new VebSearcher<long long, MAX_VAL>(vec)), queries)));
   return results;
 }
 
 void stress_test() {
   std::vector<std::pair<int, int> > tests = { \
-                                              //    std::make_pair(0, 5), 
-                                                    std::make_pair(1048575, 10000),
-                                              //std::make_pair(65535, 60000), \
-                                              //std::make_pair(3e6, 20000), \
-                                              //std::make_pair(3e7, 20000)
+                                              std::make_pair(0, 5), \
+                                              std::make_pair(300, 20000), \
+                                              std::make_pair(20000, 20000), \
+                                              std::make_pair(3e6, 20000), \
+                                              std::make_pair(3e7, 20000), \
+                                              std::make_pair(134217727, 10000)
                                             };
 
   for (const auto& test : tests) {
-    auto vec = generate_rand_vector_sorted(test.first, (long long)(1e12));
-    auto queries = generate_rand_queries(vec, test.second, (long long)(1e12));
+    auto vec = generate_rand_vector_sorted(test.first, MAX_VAL);
+    auto queries = generate_rand_queries(vec, test.second, MAX_VAL);
 
     auto results = results_all_algo(vec, queries);
     std::cout << "Time. Vec size: " << test.first << ". Queries: " << test.second << "\n";
@@ -101,7 +98,7 @@ void stress_test() {
     //check correctness
     std::vector<int> true_count(results.size());
     for (int i = 0; i < (int)queries.size(); i++) {
-      for (int j=0;j<(int)results.size(); j++) {
+      for (int j=0; j<(int)results.size(); j++) {
         if (results[j].second.answers[i]) {
           true_count[j] ++;
         }

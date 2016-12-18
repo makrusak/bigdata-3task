@@ -102,12 +102,8 @@ void stress_test() {
         if (results[j].second.answers[i]) {
           true_count[j] ++;
         }
-        //assert(results[0].second.answers[i] == results[j].second.answers[i]);
+        assert(results[0].second.answers[i] == results[j].second.answers[i]);
       }
-    }
-
-    for (int re : true_count) {
-      std::cout << re << " ";
     }
     std::cout << "\nCorrect\n\n";
   }
@@ -144,7 +140,6 @@ int main(int argc, char *argv[]) {
 
   for (int i = 0; i<(int)queries.size(); i++) {
     for (const auto& res : results) {
-      std::cout << "Checking correctness of " << res.first << "\n";
       assert(results[0].second.answers[i] == res.second.answers[i]);
     }
   }

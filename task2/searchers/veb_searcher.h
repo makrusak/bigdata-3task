@@ -31,12 +31,11 @@ class VebSearcher: public Searcher<T> {
     if (vec_.size() == 0) {
       return false;
     }
-    int res = veb_search(1, vec_.size()-1, elem);
+    int res = veb_search(1, tree_height(vec_.size()-1), elem);
     return res == -1;
   }
  private:
-  int veb_search(int current_pos, int current_tree_size, const T& elt) {
-    int height = tree_height(current_tree_size);
+  int veb_search(int current_pos, int height, const T& elt) {
     int bottom_height = height/2;
     int top_height = height - bottom_height;
     int top_size = tree_size(top_height);
@@ -44,12 +43,12 @@ class VebSearcher: public Searcher<T> {
     int leaf_count = 1<<bottom_height;
 
     if (height > 1) {
-      int top_index = veb_search(current_pos, top_size, elt);
+      int top_index = veb_search(current_pos, top_height, elt);
       if (top_index < 0) return top_index;
 
       int offset = top_index * bottom_size + top_size;
 
-      int bottom_index = veb_search(current_pos + offset, bottom_size, elt);
+      int bottom_index = veb_search(current_pos + offset, bottom_height, elt);
       if (bottom_index < 0) return bottom_index;
       return leaf_count*top_index + bottom_index;
     } else {
@@ -84,7 +83,10 @@ class VebSearcher: public Searcher<T> {
   }
 
   inline int tree_height(int n) {
-    return (int)ceil(log2((float)n+1));
+    int res = 0;
+    while ((1<<res)<n+1) res++;
+    return res;
+//    return (int)ceil(log2((float)n+1));
   }
 
   std::vector<T> vec_;
